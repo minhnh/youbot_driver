@@ -16,7 +16,7 @@
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
- * This sofware is published under a dual-license: GNU Lesser General Public 
+ * This sofware is published under a dual-license: GNU Lesser General Public
  * License LGPL 2.1 and BSD license. The dual-license implies that users of this
  * code may choose which terms they prefer.
  *
@@ -53,7 +53,7 @@ namespace youbot {
 
 YouBotBase::YouBotBase(const std::string name, const std::string configFilePath)
 : ethercatMaster(EthercatMaster::getInstance("youbot-ethercat.cfg", configFilePath)) {
-  // Bouml preserved body begin 00067E71
+    // Bouml preserved body begin 00067E71
 
     this->controllerType = 174;
     this->alternativeControllerType = 1632;
@@ -66,18 +66,18 @@ YouBotBase::YouBotBase(const std::string name, const std::string configFilePath)
     filename.append(".cfg");
 
     configfile.reset(new ConfigFile(filename, configFilePath));
-    
+
     if(ethercatMaster.isThreadActive()){
 			ethercatMasterWithThread = static_cast<EthercatMasterWithThread*>(&(EthercatMaster::getInstance()));
 		}else{
 			ethercatMasterWithThread = NULL;
 		}
-    
+
     this->initializeJoints();
 
-    this->initializeKinematic();
+    //this->initializeKinematic();
 
-  // Bouml preserved body end 00067E71
+    // Bouml preserved body end 00067E71
 }
 
 YouBotBase::~YouBotBase() {
@@ -124,18 +124,14 @@ void YouBotBase::getBasePosition(quantity<si::length>& longitudinalPosition, qua
 
     std::vector<quantity<plane_angle> > wheelPositions;
     quantity<plane_angle> dummy;
-    JointSensedAngle sensedPos;
     wheelPositions.assign(BASEJOINTS, dummy);
 
     ethercatMaster.AutomaticReceiveOn(false);
-    joints[0].getData(sensedPos);
-    wheelPositions[0] = sensedPos.angle;
-    joints[1].getData(sensedPos);
-    wheelPositions[1] = sensedPos.angle;
-    joints[2].getData(sensedPos);
-    wheelPositions[2] = sensedPos.angle;
-    joints[3].getData(sensedPos);
-    wheelPositions[3] = sensedPos.angle;
+    for (unsigned int i = 0; i < BASEJOINTS; i++) {
+      JointSensedAngle sensedPos;
+      joints[i].getData(sensedPos);
+      wheelPositions[i] = sensedPos.angle;
+    }
     ethercatMaster.AutomaticReceiveOn(true);
 
     youBotBaseKinematic.wheelPositionsToCartesianPosition(wheelPositions, longitudinalPosition, transversalPosition, orientation);
@@ -153,35 +149,24 @@ void YouBotBase::setBasePosition(const quantity<si::length>& longitudinalPositio
     quantity<plane_angle> dummy;
     JointAngleSetpoint setpointPos;
     wheelPositions.assign(BASEJOINTS, dummy);
-    JointSensedAngle sensedPos;
 
     youBotBaseKinematic.cartesianPositionToWheelPositions(longitudinalPosition, transversalPosition, orientation, wheelPositions);
-    
+
     if (wheelPositions.size() < BASEJOINTS)
       throw std::out_of_range("To less wheel velocities");
-    
-    joints[0].setEncoderToZero();
-    joints[1].setEncoderToZero();
-    joints[2].setEncoderToZero();
-    joints[3].setEncoderToZero();
+
+    for (unsigned int i = 0; i < BASEJOINTS; i++) {
+      joints[i].setEncoderToZero();
+    }
     SLEEP_MILLISEC(10);
 
     ethercatMaster.AutomaticSendOn(false);
-    joints[0].getData(sensedPos);
-    setpointPos.angle = sensedPos.angle + wheelPositions[0];
-    joints[0].setData(setpointPos);
-    
-    joints[1].getData(sensedPos);
-    setpointPos.angle = sensedPos.angle + wheelPositions[1];
-    joints[1].setData(setpointPos);
-    
-    joints[2].getData(sensedPos);
-    setpointPos.angle = sensedPos.angle + wheelPositions[2];
-    joints[2].setData(setpointPos);
-    
-    joints[3].getData(sensedPos);
-    setpointPos.angle = sensedPos.angle + wheelPositions[3];
-    joints[3].setData(setpointPos);
+    for (unsigned int i = 0; i < BASEJOINTS; i++) {
+      JointSensedAngle sensedPos;
+      joints[i].getData(sensedPos);
+      setpointPos.angle = sensedPos.angle + wheelPositions[i];
+      joints[i].setData(setpointPos);
+    }
     ethercatMaster.AutomaticSendOn(true);
 
   // Bouml preserved body end 000C0971
@@ -196,18 +181,14 @@ void YouBotBase::getBaseVelocity(quantity<si::velocity>& longitudinalVelocity, q
 
     std::vector<quantity<angular_velocity> > wheelVelocities;
     quantity<angular_velocity> dummy;
-    JointSensedVelocity sensedVel;
     wheelVelocities.assign(BASEJOINTS, dummy);
 
     ethercatMaster.AutomaticReceiveOn(false);
-    joints[0].getData(sensedVel);
-    wheelVelocities[0] = sensedVel.angularVelocity;
-    joints[1].getData(sensedVel);
-    wheelVelocities[1] = sensedVel.angularVelocity;
-    joints[2].getData(sensedVel);
-    wheelVelocities[2] = sensedVel.angularVelocity;
-    joints[3].getData(sensedVel);
-    wheelVelocities[3] = sensedVel.angularVelocity;
+    for (unsigned int i = 0; i < BASEJOINTS; i++) {
+      JointSensedVelocity sensedVel;
+      joints[i].getData(sensedVel);
+      wheelVelocities[i] = sensedVel.angularVelocity;
+    }
     ethercatMaster.AutomaticReceiveOn(true);
 
     youBotBaseKinematic.wheelVelocitiesToCartesianVelocity(wheelVelocities, longitudinalVelocity, transversalVelocity, angularVelocity);
@@ -231,14 +212,10 @@ void YouBotBase::setBaseVelocity(const quantity<si::velocity>& longitudinalVeloc
       throw std::out_of_range("To less wheel velocities");
 
     ethercatMaster.AutomaticSendOn(false);
-    setVel.angularVelocity = wheelVelocities[0];
-    joints[0].setData(setVel);
-    setVel.angularVelocity = wheelVelocities[1];
-    joints[1].setData(setVel);
-    setVel.angularVelocity = wheelVelocities[2];
-    joints[2].setData(setVel);
-    setVel.angularVelocity = wheelVelocities[3];
-    joints[3].setData(setVel);
+    for (unsigned int i = 0; i < BASEJOINTS; i++) {
+      setVel.angularVelocity = wheelVelocities[i];
+      joints[i].setData(setVel);
+    }
     ethercatMaster.AutomaticSendOn(true);
   // Bouml preserved body end 0004DD71
 }
@@ -252,26 +229,24 @@ void YouBotBase::setJointData(const std::vector<JointAngleSetpoint>& JointData) 
       throw std::out_of_range("Wrong number of JointAngleSetpoints");
 
     ethercatMaster.AutomaticSendOn(false);
-    joints[0].setData(JointData[0]);
-    joints[1].setData(JointData[1]);
-    joints[2].setData(JointData[2]);
-    joints[3].setData(JointData[3]);
+    for (unsigned int i = 0; i < BASEJOINTS; i++) {
+      joints[i].setData(JointData[i]);
+    }
     ethercatMaster.AutomaticSendOn(true);
 
   // Bouml preserved body end 0008F9F1
 }
 
 ///gets the position or angle of all base joints which have been calculated from the actual encoder value
-///These values are all read at the same time from the different joints 
+///These values are all read at the same time from the different joints
 ///@param data returns the angles by reference
 void YouBotBase::getJointData(std::vector<JointSensedAngle>& data) {
   // Bouml preserved body begin 0008FBF1
     data.resize(BASEJOINTS);
     ethercatMaster.AutomaticReceiveOn(false);
-    joints[0].getData(data[0]);
-    joints[1].getData(data[1]);
-    joints[2].getData(data[2]);
-    joints[3].getData(data[3]);
+    for (unsigned int i = 0; i < BASEJOINTS; i++) {
+      joints[i].getData(data[i]);
+    }
     ethercatMaster.AutomaticReceiveOn(true);
   // Bouml preserved body end 0008FBF1
 }
@@ -285,25 +260,23 @@ void YouBotBase::setJointData(const std::vector<JointVelocitySetpoint>& JointDat
       throw std::out_of_range("Wrong number of JointVelocitySetpoints");
 
     ethercatMaster.AutomaticSendOn(false);
-    joints[0].setData(JointData[0]);
-    joints[1].setData(JointData[1]);
-    joints[2].setData(JointData[2]);
-    joints[3].setData(JointData[3]);
+    for (unsigned int i = 0; i < BASEJOINTS; i++) {
+      joints[i].setData(JointData[i]);
+    }
     ethercatMaster.AutomaticSendOn(true);
   // Bouml preserved body end 0008FA71
 }
 
 ///gets the velocities of all base joints which have been calculated from the actual encoder values
-///These values are all read at the same time from the different joints 
+///These values are all read at the same time from the different joints
 ///@param data returns the velocities by reference
 void YouBotBase::getJointData(std::vector<JointSensedVelocity>& data) {
   // Bouml preserved body begin 0008FC71
     data.resize(BASEJOINTS);
     ethercatMaster.AutomaticReceiveOn(false);
-    joints[0].getData(data[0]);
-    joints[1].getData(data[1]);
-    joints[2].getData(data[2]);
-    joints[3].getData(data[3]);
+    for (unsigned int i = 0; i < BASEJOINTS; i++) {
+      joints[i].getData(data[i]);
+    }
     ethercatMaster.AutomaticReceiveOn(true);
   // Bouml preserved body end 0008FC71
 }
@@ -317,57 +290,53 @@ void YouBotBase::setJointData(const std::vector<JointCurrentSetpoint>& JointData
       throw std::out_of_range("Wrong number of JointCurrentSetpoint");
 
     ethercatMaster.AutomaticSendOn(false);
-    joints[0].setData(JointData[0]);
-    joints[1].setData(JointData[1]);
-    joints[2].setData(JointData[2]);
-    joints[3].setData(JointData[3]);
+    for (unsigned int i = 0; i < BASEJOINTS; i++) {
+      joints[i].setData(JointData[i]);
+    }
     ethercatMaster.AutomaticSendOn(true);
   // Bouml preserved body end 000CDFF1
 }
 
 ///gets the motor currents of all base joints which have been measured by a hal sensor
-///These values are all read at the same time from the different joints 
+///These values are all read at the same time from the different joints
 ///@param data returns the actual motor currents by reference
 void YouBotBase::getJointData(std::vector<JointSensedCurrent>& data) {
   // Bouml preserved body begin 0008FD71
     data.resize(BASEJOINTS);
     ethercatMaster.AutomaticReceiveOn(false);
-    joints[0].getData(data[0]);
-    joints[1].getData(data[1]);
-    joints[2].getData(data[2]);
-    joints[3].getData(data[3]);
+    for (unsigned int i = 0; i < BASEJOINTS; i++) {
+      joints[i].getData(data[i]);
+    }
     ethercatMaster.AutomaticReceiveOn(true);
   // Bouml preserved body end 0008FD71
 }
 
 ///commands torque to all base joints
 ///all torque values will be set at the same time
-///@param JointData the to command torque 
+///@param JointData the to command torque
 void YouBotBase::setJointData(const std::vector<JointTorqueSetpoint>& JointData) {
   // Bouml preserved body begin 000CE071
     if (JointData.size() != BASEJOINTS)
       throw std::out_of_range("Wrong number of JointTorqueSetpoint");
 
     ethercatMaster.AutomaticSendOn(false);
-    joints[0].setData(JointData[0]);
-    joints[1].setData(JointData[1]);
-    joints[2].setData(JointData[2]);
-    joints[3].setData(JointData[3]);
+    for (unsigned int i = 0; i < BASEJOINTS; i++) {
+      joints[i].setData(JointData[i]);
+    }
     ethercatMaster.AutomaticSendOn(true);
   // Bouml preserved body end 000CE071
 }
 
 ///gets the joint torque of all base joints which have been calculated from the current
-///These values are all read at the same time from the different joints 
+///These values are all read at the same time from the different joints
 ///@param data returns the actual joint torque by reference
 void YouBotBase::getJointData(std::vector<JointSensedTorque>& data) {
   // Bouml preserved body begin 000CE0F1
     data.resize(BASEJOINTS);
     ethercatMaster.AutomaticReceiveOn(false);
-    joints[0].getData(data[0]);
-    joints[1].getData(data[1]);
-    joints[2].getData(data[2]);
-    joints[3].getData(data[3]);
+    for (unsigned int i = 0; i < BASEJOINTS; i++) {
+      joints[i].getData(data[i]);
+    }
     ethercatMaster.AutomaticReceiveOn(true);
   // Bouml preserved body end 000CE0F1
 }
@@ -375,7 +344,7 @@ void YouBotBase::getJointData(std::vector<JointSensedTorque>& data) {
 ///does the commutation of the arm joints with firmware 2.0
 void YouBotBase::commutationFirmware200() {
   // Bouml preserved body begin 0010D9F1
-  
+
     InitializeJoint doInitialization;
     bool isInitialized = false;
     int noInitialization = 0;
@@ -407,16 +376,14 @@ void YouBotBase::commutationFirmware200() {
       doInitialization.setParameter(true);
 
       JointRoundsPerMinuteSetpoint rpmSetpoint(100);
-	      
+
       ethercatMaster.AutomaticReceiveOn(false);
-      this->getBaseJoint(1).setData(rpmSetpoint);
-      this->getBaseJoint(2).setData(rpmSetpoint);
-      this->getBaseJoint(3).setData(rpmSetpoint);
-      this->getBaseJoint(4).setData(rpmSetpoint);
+      for (unsigned int i = 1; i <= BASEJOINTS; i++) {
+        this->getBaseJoint(i).setData(rpmSetpoint);
+      }
       ethercatMaster.AutomaticReceiveOn(true);
       rpmSetpoint.rpm = 0;
-     
-      
+
       // check for the next 5 sec if the joints are commutated
       for (u = 1; u <= 5000; u++) {
         for (unsigned int i = 1; i <= BASEJOINTS; i++) {
@@ -430,7 +397,11 @@ void YouBotBase::commutationFirmware200() {
           ethercatMaster.sendProcessData();
           ethercatMaster.receiveProcessData();
         }
-        if (isCommutated[0] && isCommutated[1] && isCommutated[2] && isCommutated[3]) {
+        bool allJointCommutated = true;
+        for (unsigned int i = 0; i < BASEJOINTS; i++) {
+          allJointCommutated &= isCommutated[i];
+        }
+        if (allJointCommutated) {
           break;
         }
         SLEEP_MILLISEC(1);
@@ -459,7 +430,7 @@ void YouBotBase::commutationFirmware200() {
 ///does the commutation of the arm joints with firmware 1.48 and below
 void YouBotBase::commutationFirmware148() {
   // Bouml preserved body begin 0010DA71
-  
+
     InitializeJoint doInitialization;
     bool isInitialized = false;
     int noInitialization = 0;
@@ -485,10 +456,9 @@ void YouBotBase::commutationFirmware148() {
       doInitialization.setParameter(true);
 
       ethercatMaster.AutomaticReceiveOn(false);
-      this->getBaseJoint(1).setConfigurationParameter(doInitialization);
-      this->getBaseJoint(2).setConfigurationParameter(doInitialization);
-      this->getBaseJoint(3).setConfigurationParameter(doInitialization);
-      this->getBaseJoint(4).setConfigurationParameter(doInitialization);
+      for (unsigned int i = 1; i <= BASEJOINTS; i++) {
+        this->getBaseJoint(i).setConfigurationParameter(doInitialization);
+      }
       ethercatMaster.AutomaticReceiveOn(true);
 
       unsigned int statusFlags;
@@ -551,6 +521,7 @@ void YouBotBase::initializeJoints() {
     //check if enough slave exist to create YouBotJoint for the slave numbers from config file
     //if enough slave exist create YouBotJoint and store it in the joints vector
     unsigned int slaveNumber = 0;
+    /*
     configfile->readInto(slaveNumber, "JointTopology", "BaseLeftFront");
     if (slaveNumber <= noSlaves) {
       joints.push_back(new YouBotJoint(slaveNumber));
@@ -564,6 +535,7 @@ void YouBotBase::initializeJoints() {
     } else {
       throw std::out_of_range("The ethercat slave number is not available!");
     }
+    */
 
     configfile->readInto(slaveNumber, "JointTopology", "BaseLeftBack");
     if (slaveNumber <= noSlaves) {
@@ -572,12 +544,14 @@ void YouBotBase::initializeJoints() {
       throw std::out_of_range("The ethercat slave number is not available!");
     }
 
+    /*
     configfile->readInto(slaveNumber, "JointTopology", "BaseRightBack");
     if (slaveNumber <= noSlaves) {
       joints.push_back(new YouBotJoint(slaveNumber));
     } else {
       throw std::out_of_range("The ethercat slave number is not available!");
     }
+    */
 
 
     //Configure Joint Parameters
@@ -626,15 +600,15 @@ void YouBotBase::initializeJoints() {
           break;
         }
       }
-      
+
       if(!isfirmwareSupported){
         throw std::runtime_error("Unsupported firmware version: "+ firmwareVersion);
       }
-      
+
       if(this->actualFirmwareVersionAllJoints == ""){
         this->actualFirmwareVersionAllJoints = firmwareVersion;
       }
-      
+
       if(!(firmwareVersion == this->actualFirmwareVersionAllJoints)){
          throw std::runtime_error("All joints must have the same firmware version!");
       }
@@ -645,11 +619,11 @@ void YouBotBase::initializeJoints() {
       int ticks;
       configfile->readInto(ticks, jointName, "EncoderTicksPerRound");
       ticksPerRound.setParameter(ticks);
-      
+
       double torqueConstant;
       configfile->readInto(torqueConstant, jointName, "TorqueConstant_[newton_meter_divided_by_ampere]");
       torqueConst.setParameter(torqueConstant);
-      
+
       bool invdir = false;
       configfile->readInto(invdir, jointName, "InverseMovementDirection");
       inverseDir.setParameter(invdir);
@@ -659,14 +633,14 @@ void YouBotBase::initializeJoints() {
       joints[i].setConfigurationParameter(ticksPerRound);
       joints[i].setConfigurationParameter(torqueConst);
       joints[i].setConfigurationParameter(inverseDir);
-   
+
       long upperlimit = 0, lowerlimit = 0;
       configfile->readInto(lowerlimit, jointName, "LowerLimit_[encoderTicks]");
       configfile->readInto(upperlimit, jointName, "UpperLimit_[encoderTicks]");
 
       jLimits.setParameter(lowerlimit, upperlimit, false);
       joints[i].setConfigurationParameter(jLimits);
-      
+
       //Joint Trajectory Controller
       if(ethercatMaster.isThreadActive()){
         configfile->readInto(trajectory_p, jointName, "trajectory_controller_P");

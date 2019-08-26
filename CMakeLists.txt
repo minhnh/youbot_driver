@@ -125,8 +125,8 @@ SET(YOUBOT_DRIVER_HEADERS
   generic/dataobjectlockfree/os/oro_gcc/oro_arch.h
   generic/dataobjectlockfree/os/oro_i386/oro_arch.h
   generic/dataobjectlockfree/os/oro_msvc/oro_arch.h
-  generic/dataobjectlockfree//os/oro_powerpc/oro_arch.h  
-  generic/dataobjectlockfree/os/oro_powerpc/oro_atomic.h  
+  generic/dataobjectlockfree//os/oro_powerpc/oro_arch.h
+  generic/dataobjectlockfree/os/oro_powerpc/oro_atomic.h
   generic/dataobjectlockfree/os/oro_powerpc/oro_system.h
   generic/dataobjectlockfree/os/oro_x86_64/oro_arch.h
   generic-gripper/Gripper.hpp
@@ -153,10 +153,10 @@ ELSE(DEFINED ROS_ROOT_PATH AND USE_ROS MATCHES ON)
 ENDIF(DEFINED ROS_ROOT_PATH AND USE_ROS MATCHES ON)
 
 TARGET_LINK_LIBRARIES(YouBotDriver soem)
-ADD_LIBRARY(YouBotDriverShared SHARED "")
-SET_TARGET_PROPERTIES(YouBotDriverShared PROPERTIES OUTPUT_NAME "YouBotDriver")
-SET_TARGET_PROPERTIES(YouBotDriverShared PROPERTIES LINKER_LANGUAGE CXX)
-TARGET_LINK_LIBRARIES(YouBotDriverShared -Wl,-whole-archive YouBotDriver soem -Wl,-no-whole-archive)
+# ADD_LIBRARY(YouBotDriverShared SHARED "")
+# SET_TARGET_PROPERTIES(YouBotDriverShared PROPERTIES OUTPUT_NAME "YouBotDriver")
+# SET_TARGET_PROPERTIES(YouBotDriverShared PROPERTIES LINKER_LANGUAGE CXX)
+# TARGET_LINK_LIBRARIES(YouBotDriverShared -Wl,-whole-archive YouBotDriver soem -Wl,-no-whole-archive)
 
 MACRO(INSTALL_HEADERS_WITH_DIRECTORY HEADER_LIST)
   FOREACH(HEADER ${${HEADER_LIST}})
@@ -174,12 +174,4 @@ ENDMACRO(INSTALL_CONFIG_WITH_DIRECTORY)
 
 INSTALL_HEADERS_WITH_DIRECTORY(YOUBOT_DRIVER_HEADERS)
 INSTALL_CONFIG_WITH_DIRECTORY(YOUBOT_DRIVER_CONFIG)
-INSTALL(TARGETS YouBotDriver YouBotDriverShared RUNTIME DESTINATION bin LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
-
-
-#ADD_EXECUTABLE(YouBot_test
-#  ${PROJECT_SOURCE_DIR}/Test_commutation.cpp
-#)
-
-#target_link_libraries(YouBot_test YouBotDriver)
-
+INSTALL(TARGETS YouBotDriver RUNTIME DESTINATION bin LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
